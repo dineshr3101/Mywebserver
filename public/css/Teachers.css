@@ -70,7 +70,7 @@ body {
 .main-content {
     flex-grow: 1;
     padding: 20px;
-    background-image: url(/public/images/1.jpg); 
+    background-image: url(/images/1.jpg); 
     background-size: cover; /* image covers the entire area */
     background-position: center center; /* Centers the background image */
     background-repeat: no-repeat; /* Prevents the image from repeating */
