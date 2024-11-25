@@ -1,13 +1,13 @@
 const express = require('express');
 const mysql = require('mysql2');
-const config = require('./config/config');
+const { config } = require('./config/config');  // Destructure config from the config module
 
-// Create a connection to the database
+// Create a connection to the database using the correct keys from the config object
 const connection = mysql.createConnection({
-  host: config.db.host,
-  user: config.db.user,
-  password: config.db.password,
-  database: config.db.database
+  host: config.APP_DB_HOST,  // Use the correct property names
+  user: config.APP_DB_USER,
+  password: config.APP_DB_PASSWORD,
+  database: config.APP_DB_NAME
 });
 
 // Connect to the database
