@@ -26,7 +26,7 @@ const app = express();
 app.use(express.static('public'));
 
 // Start the server
-const app_port = process.env.APP_PORT || 3000;
+const app_port = process.env.APP_PORT || 3001;
 app.listen(app_port, '0.0.0.0', () => {
     console.log(`Server is running on port ${app_port}.`);
 });
