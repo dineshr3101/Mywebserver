@@ -7,7 +7,7 @@ const secretName = "Mydbsecret";
 let config = {
   APP_DB_HOST: "3.86.80.13",  // Default to localhost for testing
   APP_DB_USER: "nodeapp",
-  APP_DB_PASSWORD: "your_password",
+  APP_DB_PASSWORD: "student12",
   APP_DB_NAME: "STUDENTS"
 };
 
