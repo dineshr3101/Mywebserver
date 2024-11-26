@@ -6,6 +6,10 @@ const { config, loadSecrets } = require('./config/config');
 // Initialize express app
 const app = express();
 
+// Middleware to parse JSON request body
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
 // Make sure secrets are loaded before using the config
 async function startServer() {
   try {
@@ -36,47 +40,29 @@ async function startServer() {
       res.sendFile(path.join(__dirname, 'public', 'index.html'));
     });
 
-    // Route for the students page
+    // Route to handle adding a new student
+    app.post('/add-student', (req, res) => {
+      const { name, address, city, state, email, phone } = req.body;
+
+      const query = 'INSERT INTO students (name, address, city, state, email, phone) VALUES (?, ?, ?, ?, ?, ?)';
+      connection.query(query, [name, address, city, state, email, phone], (err, result) => {
+        if (err) {
+          console.error('Error inserting student into database:', err);
+          return res.status(500).send('Database error');
+        }
+        res.json({ id: result.insertId, message: 'Student added successfully' });
+      });
+    });
+
+    // Route to fetch all students from the database
     app.get('/students', (req, res) => {
-      res.sendFile(path.join(__dirname, 'public', 'students.html'));
-    });
-
-    // Route for the teachers page
-    app.get('/teachers', (req, res) => {
-      res.sendFile(path.join(__dirname, 'public', 'teachers.html'));
-    });
-
-    // Optional: Handle a specific student or teacher with query params or routes
-    app.get('/students/:id', (req, res) => {
-      const studentId = req.params.id;
-      connection.query('SELECT * FROM students WHERE id = ?', [studentId], (err, results) => {
+      connection.query('SELECT * FROM students', (err, results) => {
         if (err) {
-          return res.status(500).send('Error retrieving student details');
+          console.error('Error fetching students from database:', err);
+          return res.status(500).send('Database query error');
         }
-        if (results.length === 0) {
-          return res.status(404).send('Student not found');
-        }
-        res.json(results[0]); // Example: Send student data as JSON
+        res.json(results);
       });
-    });
-
-    // Optional: Handle teacher details by ID
-    app.get('/teachers/:id', (req, res) => {
-      const teacherId = req.params.id;
-      connection.query('SELECT * FROM teachers WHERE id = ?', [teacherId], (err, results) => {
-        if (err) {
-          return res.status(500).send('Error retrieving teacher details');
-        }
-        if (results.length === 0) {
-          return res.status(404).send('Teacher not found');
-        }
-        res.json(results[0]);  // Send teacher data as JSON
-      });
-    });
-
-    // Handle 404 for any routes not defined
-    app.use((req, res) => {
-      res.status(404).send('404: Page not found');
     });
 
     // Start the server
