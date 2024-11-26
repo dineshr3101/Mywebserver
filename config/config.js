@@ -5,7 +5,7 @@ const secretName = "Mydbsecret";
 
 // Default configuration
 let config = {
-  APP_DB_HOST: "44.201.155.96",  // Default to localhost for testing
+  APP_DB_HOST: "44.201.155.96",  // EC2 public IP
   APP_DB_USER: "nodeapp",
   APP_DB_PASSWORD: "student12",
   APP_DB_NAME: "STUDENTS"
@@ -35,5 +35,5 @@ Object.keys(config).forEach(key => {
   }
 });
 
-// Make sure to load the secrets before using the config
+// load the secrets 
 module.exports = { config, loadSecrets };
