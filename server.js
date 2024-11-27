@@ -1,79 +1,88 @@
 const express = require('express');
 const mysql = require('mysql2');
 const path = require('path');
-const { config, loadSecrets } = require('./config/config');
+const bodyParser = require('body-parser');
+const { config, loadSecrets } = require('./config/config.js');  // Load config and secrets
 
-// Initialize express app
 const app = express();
 
-// Middleware to parse JSON request body
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+// Middleware to parse JSON bodies
+app.use(bodyParser.json());
 
-// Make sure secrets are loaded before using the config
-async function startServer() {
-  try {
-    await loadSecrets(); // Wait for secrets to be loaded
+// Serve static files from 'public' folder
+app.use(express.static(path.join(__dirname, 'public')));
 
-    // Create a connection to the database using the correct keys from the config object
+// Load secrets asynchronously before starting the app
+loadSecrets().then(() => {
+    // Create a connection to the database using the loaded config
     const connection = mysql.createConnection({
-      host: config.APP_DB_HOST,  // Use the correct property names
-      user: config.APP_DB_USER,
-      password: config.APP_DB_PASSWORD,
-      database: config.APP_DB_NAME
+        host: config.APP_DB_HOST,
+        user: config.APP_DB_USER,
+        password: config.APP_DB_PASSWORD,
+        database: config.APP_DB_NAME
     });
 
     // Connect to the database
     connection.connect((err) => {
-      if (err) {
-        console.error('Error connecting to the database:', err);
-        return;
-      }
-      console.log('Connected to the MySQL database');
-    });
-
-    // Serve static files from the 'public' folder
-    app.use(express.static(path.join(__dirname, 'public')));
-
-    // Route for the homepage
-    app.get('/', (req, res) => {
-      res.sendFile(path.join(__dirname, 'public', 'index.html'));
-    });
-
-    // Route to handle adding a new student
-    app.post('/add-student', (req, res) => {
-      const { name, address, city, state, email, phone } = req.body;
-
-      const query = 'INSERT INTO students (name, address, city, state, email, phone) VALUES (?, ?, ?, ?, ?, ?)';
-      connection.query(query, [name, address, city, state, email, phone], (err, result) => {
         if (err) {
-          console.error('Error inserting student into database:', err);
-          return res.status(500).send('Database error');
+            console.error('Error connecting to the database:', err);
+            return;
         }
-        res.json({ id: result.insertId, message: 'Student added successfully' });
-      });
+        console.log('Connected to the MySQL database');
     });
 
-    // Route to fetch all students from the database
-    app.get('/students', (req, res) => {
-      connection.query('SELECT * FROM students', (err, results) => {
-        if (err) {
-          console.error('Error fetching students from database:', err);
-          return res.status(500).send('Database query error');
-        }
-        res.json(results);
-      });
+    // Fetch all students from the database
+    app.get('/api/students', (req, res) => {
+        connection.query('SELECT * FROM students', (err, results) => {
+            if (err) {
+                return res.status(500).json({ error: 'Failed to fetch students' });
+            }
+            res.json(results);
+        });
+    });
+
+    // Add a new student to the database
+    app.post('/api/students', (req, res) => {
+        const { name, address, city, state, email, phone } = req.body;
+        const query = 'INSERT INTO students (name, address, city, state, email, phone) VALUES (?, ?, ?, ?, ?, ?)';
+        connection.query(query, [name, address, city, state, email, phone], (err, result) => {
+            if (err) {
+                return res.status(500).json({ error: 'Failed to add student' });
+            }
+            res.json({ id: result.insertId, name, address, city, state, email, phone });
+        });
+    });
+
+    // Delete a student
+    app.delete('/api/students/:id', (req, res) => {
+        const studentId = req.params.id;
+        connection.query('DELETE FROM students WHERE id = ?', [studentId], (err, result) => {
+            if (err) {
+                return res.status(500).json({ error: 'Failed to delete student' });
+            }
+            res.json({ success: true });
+        });
+    });
+
+    // Update a student
+    app.put('/api/students/:id', (req, res) => {
+        const studentId = req.params.id;
+        const { name, address, city, state, email, phone } = req.body;
+        const query = 'UPDATE students SET name = ?, address = ?, city = ?, state = ?, email = ?, phone = ? WHERE id = ?';
+        connection.query(query, [name, address, city, state, email, phone, studentId], (err, result) => {
+            if (err) {
+                return res.status(500).json({ error: 'Failed to update student' });
+            }
+            res.json({ success: true });
+        });
     });
 
     // Start the server
-    const app_port = process.env.APP_PORT || 3000;
-    app.listen(app_port, '0.0.0.0', () => {
-      console.log(`Server is running on port ${app_port}.`);
+    const port = process.env.PORT || 3000;
+    app.listen(port, () => {
+        console.log(`Server is running at http://localhost:${port}`);
     });
-  } catch (err) {
-    console.error('Error during server startup:', err);
-  }
-}
-
-// Start the server
-startServer();
+}).catch((err) => {
+    console.error('Failed to load secrets:', err);
+    process.exit(1);  // Exit if secrets loading fails
+});
