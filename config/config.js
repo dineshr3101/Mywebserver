@@ -5,7 +5,7 @@ const secretName = "Mydbsecret";
 
 // Default configuration
 let config = {
-  APP_DB_HOST: "44.201.155.96",  // EC2 public IP
+  APP_DB_HOST: "18.207.197.2",  // EC2 public IP
   APP_DB_USER: "nodeapp",
   APP_DB_PASSWORD: "student12",
   APP_DB_NAME: "STUDENTS"
